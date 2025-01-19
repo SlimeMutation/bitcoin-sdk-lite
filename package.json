@@ -1,0 +1,53 @@
+{
+  "name": "wallet-sdk-s3",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "rex",
+  "license": "ISC",
+  "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SlimeMutation/wallet-sdk-s3.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SlimeMutation/wallet-sdk-s3/issues"
+  },
+  "homepage": "https://github.com/SlimeMutation/wallet-sdk-s3#readme",
+  "dependencies": {
+    "bip32": "^4.0.0",
+    "bip39": "^3.0.4",
+    "bitcoinjs-lib": "^6.1.5",
+    "bitcore-lib": "8.25.31",
+    "ecpair": "^2.1.0",
+    "tiny-secp256k1": "^2.2.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.9",
+    "@babel/preset-env": "^7.22.9",
+    "@babel/preset-typescript": "^7.22.5",
+    "@midwayjs/cli": "1.0.0",
+    "@midwayjs/luckyeye": "1.0.0",
+    "@midwayjs/mock": "2.3.0",
+    "@types/bitcore-lib": "^0.15.6",
+    "@types/bs58check": "^2.1.0",
+    "@types/jest": "26.0.10",
+    "@types/koa-bodyparser": "4.3.0",
+    "@types/node": "14",
+    "@typescript-eslint/eslint-plugin": "^5.13.0",
+    "@typescript-eslint/parser": "^5.13.0",
+    "babel-jest": "^29.6.2",
+    "cross-env": "6.0.0",
+    "eslint": "^8.4.1",
+    "eslint-config-semistandard": "^17.0.0",
+    "jest": "^29.0.0",
+    "jest-environment-node": "^29.7.0",
+    "mwts": "^1.0.5",
+    "tronweb": "^2.10.1",
+    "ts-jest": "^29.0.0",
+    "ts-node": "10.4.0",
+    "typescript": "5.0.2"
+  }
+}
