@@ -168,3 +168,45 @@ export function createSchnorrAddress(params: CreateSchnorrAddressParams): Schnor
         address: payment.address
     }
 }
+
+export function createSchnorrAddress2(params: CreateSchnorrAddressParams): SchnorrAddressResult {
+    bitcoin.initEccLib(ecc);
+    const {seedHex, receiveOrChange, addressIndex} = params;
+
+    const root = bip32.fromSeed(Buffer.from(seedHex, 'hex'), bitcoin.networks.bitcoin);
+    let path = "m/86'/0'/0'/0/" + addressIndex + "";
+    if (receiveOrChange === '1') {
+        path = "m/86'/0'/0'/1/" + addressIndex + "";
+    }
+
+    const childKey = root.derivePath(path);
+    const privateKey = childKey.privateKey;
+    if (!privateKey) {
+        throw new Error('No privateKey found');
+    }
+
+    const publicKey = childKey.publicKey;
+    if (!publicKey) {
+        throw new Error('No publicKey found');
+    }
+
+    const tweak = bitcoin.crypto.taggedHash('TapTweak', publicKey.slice(1, 33));
+    const tweakedPublicKey = Buffer.from(publicKey);
+    for (let i = 0; i < 32; i++) {
+        tweakedPublicKey[1 + i] ^= tweak[i];
+    }
+
+    //生成P2TR地址
+    const {address} = bitcoin.payments.p2tr({
+        internalPubkey: tweakedPublicKey.slice(1, 33)
+    });
+    if (!address) {
+        throw new Error('Failed to generate Schnorr address');
+    }
+
+    return {
+        privateKey: Buffer.from(privateKey).toString('hex'),
+        publicKey: Buffer.from(publicKey).toString('hex'),
+        address
+    }
+}

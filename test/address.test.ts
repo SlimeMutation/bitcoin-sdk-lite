@@ -1,5 +1,5 @@
 import * as bip39 from "bip39";
-import { createAddress, createMultiSignAddress, createSchnorrAddress } from "../src/bitcoin/address_copy";
+import { createAddress, createMultiSignAddress, createSchnorrAddress, createSchnorrAddress2 } from "../src/bitcoin/address_copy";
 import type { NetworkType } from "../src/bitcoin/address_copy";
 import * as assert from 'assert';
 
@@ -97,5 +97,16 @@ describe('Test for script', () => {
         };
         const {privateKey, publicKey, address} = createSchnorrAddress(param);
         console.log(`createSchnorrAddress - address:${address} - privateKey:${privateKey} - publicKey:${publicKey}`)
+    });
+    test('createSchnorrAddress2', () => {
+        const mnemonic = '参 请 片 吨 子 爆 糊 避 养 锦 扎 熙';
+        const seed = bip39.mnemonicToSeedSync(mnemonic, '');
+        const param = {
+            seedHex: seed.toString('hex'),
+            receiveOrChange: '0',
+            addressIndex: 0
+        };
+        const {privateKey, publicKey, address} = createSchnorrAddress2(param);
+        console.log(`createSchnorrAddress2 - address:${address} - privateKey:${privateKey} - publicKey:${publicKey}`)
     });
 });

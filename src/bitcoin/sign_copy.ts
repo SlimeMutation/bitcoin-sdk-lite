@@ -1,9 +1,15 @@
 import { Transaction } from 'bitcoinjs-lib';
-const ecc = require("tiny-secp256k1");
-const { BIP32Factory } = require("bip32");
+import * as ecc from 'tiny-secp256k1';
+import * as bitcoin from 'bitcoinjs-lib';
+import BIP32Factory from 'bip32';
 BIP32Factory(ecc);
-const bitcoin = require("bitcoinjs-lib");
 const bitcore = require("bitcore-lib");
+import { toXOnly, tapTreeToList, tapTreeFromList } from "bitcoinjs-lib/src/psbt/bip371"
+import { ECPairFactory } from 'ecpair'
+
+bitcoin.initEccLib(ecc);
+const bip32 = BIP32Factory(ecc);
+const ECPair = ECPairFactory(ecc);
 
 export function buildAndSignTx(params: {
   privateKey: string;
@@ -41,47 +47,96 @@ export function buildAndSignTx(params: {
   return transaction.toString();
 }
 
-export function buildUnsignTxAndSign(params:{
-  keyPair: any;
+// export function buildUnsignTxAndSign(params:{
+//   keyPair: any;
+//   signObj: {
+//     inputs: {
+//       address: string;
+//       txId: string;
+//       outputIndex: number;
+//       satoshis: number;
+//     }[];
+//     outputs: {
+//       address: string;
+//       satoshis: number;
+//     }[];
+//   };
+//   network: string;
+// }): string {
+//   const {keyPair, signObj, network} = params;
+//   const psbt = new bitcoin.Psbt({ network });
+//   const inputs = signObj.inputs.map((input) => {
+//     return {
+//       address: input.address,
+//       txId: input.txId,
+//       outputIndex: input.outputIndex,
+//       script: new bitcore.Script.fromAddress(input.address).toHex(),
+//       satoshis: input.satoshis
+//     }
+//   });
+//   psbt.addInput(inputs);
+
+//   const outputs = signObj.outputs.map((output) => {
+//     return {
+//       address: output.address,
+//       satoshis: output.satoshis
+//     }
+//   });
+//   psbt.addOutput(outputs);
+//   psbt.toBase64();
+
+//   psbt.signInput(0, keyPair);
+//   psbt.finalizeAllInputs();
+
+//   const signedTransaction = psbt.extractTransaction().toHex();
+//   return signedTransaction;
+// }
+
+export function signBtcTaprootTransaction(params:{
+  privateKey: Buffer;
   signObj: {
     inputs: {
-      address: string;
-      txId: string;
-      outputIndex: number;
-      satoshis: number;
+      txid: string;
+      amount: number;
+      output: string;
+      publicKey: Buffer;
     }[];
     outputs: {
-      address: string;
-      satoshis: number;
+      value: number;
+      sendAddress: string;
+      sendPubKey: string;
     }[];
   };
-  network: string;
 }): string {
-  const {keyPair, signObj, network} = params;
-  const psbt = new bitcoin.Psbt({ network });
+  const {privateKey, signObj} = params;
+  const psbt = new bitcoin.Psbt({ network: bitcoin.networks.bitcoin });
   const inputs = signObj.inputs.map((input) => {
     return {
-      address: input.address,
-      txId: input.txId,
-      outputIndex: input.outputIndex,
-      script: new bitcore.Script.fromAddress(input.address).toHex(),
-      satoshis: input.satoshis
+      hash: input.txid,
+      index: 0,
+      witnessUtxo: {value: input.amount, script: Buffer.from(input.output, 'hex')},
+      tapInternalKey: toXOnly(input.publicKey)
     }
   });
-  psbt.addInput(inputs);
+  psbt.addInputs(inputs);
+
+  const sendInternalKey = ECPair.fromPrivateKey(privateKey, { compressed: false });
 
   const outputs = signObj.outputs.map((output) => {
     return {
-      address: output.address,
-      satoshis: output.satoshis
+      value: output.value,
+      address: output.sendAddress!,
+      tapInternalKey: toXOnly(Buffer.from(output.sendPubKey, 'hex'))
     }
   });
-  psbt.addOutput(outputs);
-  psbt.toBase64();
+  psbt.addOutputs(outputs);
+  
+  const tweakedSigner = sendInternalKey.tweak(
+    bitcoin.crypto.taggedHash('TapTweak', toXOnly(sendInternalKey.publicKey))
+  );
 
-  psbt.signInput(0, keyPair);
+  psbt.signInput(0, tweakedSigner);
   psbt.finalizeAllInputs();
 
-  const signedTransaction = psbt.extractTransaction().toHex();
-  return signedTransaction;
+  return psbt.extractTransaction().toBuffer().toString('hex');
 }
